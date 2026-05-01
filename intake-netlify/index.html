@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Project Intake — Let's Build Something</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e10; --surface: #18181b; --border: #2a2a30;
+    --accent: #7c6fcd; --accent-soft: rgba(124,111,205,0.12);
+    --text: #f0eff5; --muted: #8b8a9a;
+    --user-bg: #7c6fcd; --ai-bg: #1e1e24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+  header { width: 100%; max-width: 680px; padding: 2rem 1.5rem 1rem; }
+  header h1 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; letter-spacing: -0.02em; }
+  header p { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+  .progress-bar { width: 100%; max-width: 680px; padding: 0 1.5rem; margin-bottom: 0.5rem; }
+  .progress-track { height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.6s ease; width: 5%; }
+  .chat-window { width: 100%; max-width: 680px; flex: 1; padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; max-height: calc(100vh - 220px); }
+  .message { display: flex; gap: 10px; align-items: flex-start; animation: fadeUp 0.25s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .message.user { flex-direction: row-reverse; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; margin-top: 2px; }
+  .avatar.ai { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--border); }
+  .avatar.user { background: var(--user-bg); color: #fff; }
+  .bubble { max-width: 82%; padding: 0.75rem 1rem; border-radius: 12px; font-size: 0.9rem; line-height: 1.65; }
+  .message.ai .bubble { background: var(--ai-bg); border: 1px solid var(--border); border-top-left-radius: 4px; }
+  .message.user .bubble { background: var(--user-bg); color: #fff; border-top-right-radius: 4px; }
+  .typing { display: flex; gap: 4px; align-items: center; padding: 0.75rem 1rem; }
+  .typing span { width: 6px; height: 6px; background: var(--muted); border-radius: 50%; animation: bounce 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+  .input-area { width: 100%; max-width: 680px; padding: 1rem 1.5rem 1.5rem; position: sticky; bottom: 0; background: linear-gradient(to top, var(--bg) 70%, transparent); }
+  .input-row { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 6px 6px 6px 14px; transition: border-color 0.2s; }
+  .input-row:focus-within { border-color: var(--accent); }
+  textarea { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; resize: none; max-height: 100px; line-height: 1.5; padding: 6px 0; }
+  textarea::placeholder { color: var(--muted); }
+  button.send { background: var(--accent); color: #fff; border: none; border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: opacity 0.2s, transform 0.1s; align-self: flex-end; }
+  button.send:hover { opacity: 0.85; }
+  button.send:active { transform: scale(0.95); }
+  button.send:disabled { opacity: 0.35; cursor: default; }
+  .brief-card { background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 1.25rem 1.5rem; margin: 0.5rem 0; font-size: 0.85rem; line-height: 1.7; }
+  .brief-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-weight: 400; color: var(--accent); margin-bottom: 0.75rem; }
+  .brief-card .field { margin-bottom: 0.5rem; }
+  .brief-card .label { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .brief-card .value { color: var(--text); margin-top: 2px; }
+  .copy-btn { margin-top: 1rem; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 7px 14px; font-size: 0.82rem; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
+  .copy-btn:hover { background: rgba(124,111,205,0.25); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Let's plan your website ✦</h1>
+  <p>Answer a few questions — I'll put together a full project brief in 3–5 minutes.</p>
+</header>
+<div class="progress-bar"><div class="progress-track"><div class="progress-fill" id="progress"></div></div></div>
+<div class="chat-window" id="chat"></div>
+<div class="input-area">
+  <div class="input-row">
+    <textarea id="input" placeholder="Type your answer here…" rows="1"></textarea>
+    <button class="send" id="sendBtn" onclick="sendMessage()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9z"/></svg>
+    </button>
+  </div>
+</div>
+<script>
+const SYSTEM = `You are a friendly web project intake assistant for a freelance developer. Chat warmly with the client and ask ONE question at a time in this order:
+1. Name and what their business does
+2. Main goal of the website
+3. Pages needed (home, about, services, contact, shop, blog, etc.)
+4. Style/vibe they want — ask them to name a website they love
+5. Budget (Under R5k / R5k-R15k / R15k-R30k / R30k+)
+6. Timeline (ASAP / 2-4 weeks / 1-2 months / flexible)
+7. Existing logo or branding?
+8. Anything else important
+
+Keep responses to 1-3 sentences. Be warm and professional. Once you have everything, say "Perfect! Putting your brief together now..." then output exactly:
+
+---BRIEF START---
+CLIENT: [name]
+BUSINESS: [description]
+GOAL: [main goal]
+PAGES: [list]
+STYLE: [description]
+BUDGET: [range]
+TIMELINE: [timeline]
+BRANDING: [yes/no + details]
+NOTES: [extras]
+---BRIEF END---
+
+Then say: "Your brief has been sent to the developer — expect to hear back within 24 hours!"`;
+
+let msgs = [], briefDone = false, qCount = 0;
+const chat = document.getElementById('chat'), inp = document.getElementById('input'), btn = document.getElementById('sendBtn'), prog = document.getElementById('progress');
+
+inp.addEventListener('keydown', e => { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} });
+inp.addEventListener('input', () => { inp.style.height='auto'; inp.style.height=Math.min(inp.scrollHeight,100)+'px'; });
+
+function addMsg(role, text) {
+  const d=document.createElement('div'); d.className=`message ${role}`;
+  const av=document.createElement('div'); av.className=`avatar ${role}`; av.textContent=role==='ai'?'✦':'You';
+  const b=document.createElement('div'); b.className='bubble';
+  if (role==='ai' && text.includes('---BRIEF START---')) {
+    const m=text.match(/---BRIEF START---([\s\S]*?)---BRIEF END---/);
+    const after=text.split('---BRIEF END---')[1]||'';
+    b.textContent=text.split('---BRIEF START---')[0].trim()||'Perfect! Putting your brief together now...';
+    d.appendChild(av); d.appendChild(b); chat.appendChild(d);
+    if(m) setTimeout(()=>renderBrief(m[1].trim(),after.trim()),700);
+    briefDone=true; prog.style.width='100%'; inp.disabled=true; btn.disabled=true;
+    return;
+  }
+  b.textContent=text; d.appendChild(av); d.appendChild(b); chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function renderBrief(raw, closing) {
+  const fields={};
+  raw.split('\n').forEach(l=>{const i=l.indexOf(':');if(i>-1)fields[l.slice(0,i).trim()]=l.slice(i+1).trim();});
+  const card=document.createElement('div'); card.className='message ai';
+  const av=document.createElement('div'); av.className='avatar ai'; av.textContent='✦';
+  const bc=document.createElement('div'); bc.className='brief-card';
+  bc.innerHTML=`<h3>Project Brief</h3>`+Object.entries(fields).map(([k,v])=>`<div class="field"><div class="label">${k}</div><div class="value">${v}</div></div>`).join('')+`<button class="copy-btn">Copy brief</button>`;
+  card.appendChild(av); card.appendChild(bc); chat.appendChild(card);
+  bc.querySelector('.copy-btn').onclick=()=>{navigator.clipboard.writeText(raw).then(()=>{event.target.textContent='Copied!';setTimeout(()=>event.target.textContent='Copy brief',2000);});};
+  if(closing) setTimeout(()=>addMsg('ai',closing),400);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function showTyping(){const t=document.createElement('div');t.className='message ai';t.id='typing';const av=document.createElement('div');av.className='avatar ai';av.textContent='✦';const b=document.createElement('div');b.className='bubble typing';b.innerHTML='<span></span><span></span><span></span>';t.appendChild(av);t.appendChild(b);chat.appendChild(t);chat.scrollTop=chat.scrollHeight;}
+function rmTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+
+async function callAPI(m){
+  const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:SYSTEM,messages:m})});
+  const d=await r.json(); return d.content?.[0]?.text||'Something went wrong, please refresh.';
+}
+
+async function sendMessage(){
+  const text=inp.value.trim(); if(!text||briefDone)return;
+  inp.value=''; inp.style.height='auto'; btn.disabled=true;
+  addMsg('user',text); msgs.push({role:'user',content:text});
+  qCount++; prog.style.width=Math.min(10+qCount*11,90)+'%';
+  showTyping();
+  try { const rep=await callAPI(msgs); rmTyping(); msgs.push({role:'assistant',content:rep}); addMsg('ai',rep); }
+  catch(e){ rmTyping(); addMsg('ai','Something went wrong — please refresh.'); }
+  btn.disabled=false; inp.focus();
+}
+
+(async()=>{
+  showTyping();
+  try{
+    const op=await callAPI([{role:'user',content:'START'}]);
+    rmTyping(); msgs.push({role:'user',content:'START'}); msgs.push({role:'assistant',content:op}); addMsg('ai',op);
+  }catch(e){rmTyping();addMsg('ai',"Hi! I'm here to help plan your new website. What's your name and what does your business do?");}
+  inp.focus();
+})();
+</script>
+</body>
+</html>
