@@ -1,5 +1,39 @@
 const JSON_HEADER = { 'Content-Type': 'application/json' };
 
+const RATE_LIMIT_MAX = 3;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const rateLimitStore = new Map(); // ip -> { count, resetTime }
+
+function getClientIp(headers) {
+  return (
+    headers['x-nf-client-connection-ip'] ||
+    headers['client-ip'] ||
+    (headers['x-forwarded-for'] || '').split(',')[0].trim() ||
+    'unknown'
+  );
+}
+
+function isRateLimited(ip) {
+  const now = Date.now();
+
+  // purge expired entries to prevent unbounded memory growth
+  for (const [key, entry] of rateLimitStore) {
+    if (now > entry.resetTime) rateLimitStore.delete(key);
+  }
+
+  const entry = rateLimitStore.get(ip);
+
+  if (!entry || now > entry.resetTime) {
+    rateLimitStore.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) return true;
+
+  entry.count++;
+  return false;
+}
+
 async function sendBriefEmail(briefContent) {
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -27,6 +61,15 @@ exports.handler = async function (event) {
       statusCode: 405,
       headers: JSON_HEADER,
       body: JSON.stringify({ error: 'Method not allowed. Use POST.' })
+    };
+  }
+
+  const clientIp = getClientIp(event.headers);
+  if (isRateLimited(clientIp)) {
+    return {
+      statusCode: 429,
+      headers: JSON_HEADER,
+      body: JSON.stringify({ error: "You've reached the maximum number of sessions. Please contact the developer directly." })
     };
   }
 
