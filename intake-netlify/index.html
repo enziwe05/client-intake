@@ -135,7 +135,7 @@ function showTyping(){const t=document.createElement('div');t.className='message
 function rmTyping(){const t=document.getElementById('typing');if(t)t.remove();}
 
 async function callAPI(m){
-  const r=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:SYSTEM,messages:m})});
+  const r=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:800,system:SYSTEM,messages:m})});
   const d=await r.json(); return d.content?.[0]?.text||'Something went wrong, please refresh.';
 }
 
