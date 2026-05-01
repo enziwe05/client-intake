@@ -1,5 +1,26 @@
 const JSON_HEADER = { 'Content-Type': 'application/json' };
 
+async function sendBriefEmail(briefContent) {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
+    },
+    body: JSON.stringify({
+      from: 'Intake Bot <onboarding@resend.dev>',
+      to: 'dlaminienziwe9@gmail.com',
+      subject: 'New Project Brief Submitted',
+      text: briefContent
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.message || `Resend API error (HTTP ${response.status})`);
+  }
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
     return {
@@ -73,6 +94,17 @@ exports.handler = async function (event) {
       headers: JSON_HEADER,
       body: JSON.stringify({ error: message })
     };
+  }
+
+  const replyText = data?.content?.[0]?.text || '';
+  const briefMatch = replyText.match(/---BRIEF START---([\s\S]*?)---BRIEF END---/);
+
+  if (briefMatch && process.env.RESEND_API_KEY) {
+    try {
+      await sendBriefEmail(briefMatch[1].trim());
+    } catch (err) {
+      console.error('Failed to send brief email:', err.message);
+    }
   }
 
   return {
